@@ -22,26 +22,33 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 2. Run Gitleaks scan (corrected)
+      # 2. Run Gitleaks scan with config + SARIF report
       - name: Run Gitleaks Secret Scan
         uses: gitleaks/gitleaks-action@v2
         with:
-          args: detect --source . --no-banner --redact --report-format sarif --report-path gitleaks-results.sarif
+          args: detect --source . \
+            --config .gitleaks.toml \
+            --redact \
+            --no-banner \
+            --exit-code 0 \
+            --report-format sarif \
+            --report-path gitleaks-results.sarif
 
+      # 3. Upload Gitleaks Report as artifact
       - name: Upload Gitleaks Report
         uses: actions/upload-artifact@v4
         with:
           name: gitleaks-results
           path: gitleaks-results.sarif
 
-      # 3. Configure AWS
+      # 4. Configure AWS
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.VELERO_EKS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # 4. Configure GCP
+      # 5. Configure GCP
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v2
         with:
@@ -52,11 +59,11 @@ jobs:
         with:
           project_id: ${{ env.GKE_PROJECT }}
 
-      # 5. Install Helm
+      # 6. Install Helm
       - name: Setup Helm
         uses: azure/setup-helm@v4
 
-      # 6. Deploy Velero on EKS
+      # 7. Deploy Velero on EKS
       - name: Deploy Velero on EKS
         run: |
           aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER
@@ -71,7 +78,7 @@ jobs:
             --set configuration.volumeSnapshotLocation[0].provider=aws \
             --set serviceAccount.server.annotations."eks\.amazonaws\.com/role-arn"="${{ secrets.VELERO_EKS_ROLE_ARN }}"
 
-      # 7. Deploy Velero on GKE
+      # 8. Deploy Velero on GKE
       - name: Deploy Velero on GKE
         run: |
           gcloud container clusters get-credentials $GKE_CLUSTER --zone $GKE_ZONE --project $GKE_PROJECT

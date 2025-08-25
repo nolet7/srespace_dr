@@ -39,3 +39,16 @@ paths = [
   "helm/values-velero-gke.yaml",
   "k8s/velero/schedules-orion.yaml"
 ]
+
+[[rules]]
+description = "Ignore AWS CLI botocore JSON specs"
+path = '''terraform/aws/aws/dist/.*\.json'''
+regex = '''(?i)(.*)'''
+tags = ["ignore"]
+
+[[rules]]
+description = "Ignore GCP Terraform provider JSON specs"
+path = '''terraform/gcp/.*\.json'''
+regex = '''(?i)(.*)'''
+tags = ["ignore"]
+
