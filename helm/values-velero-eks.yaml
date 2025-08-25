@@ -1,4 +1,7 @@
+# helm/values-velero-eks.yaml
+
 configuration:
+  provider: aws
   backupStorageLocation:
     - name: s3-primary
       provider: aws
@@ -9,11 +12,22 @@ configuration:
     - name: aws-default
       provider: aws
 
-credentials:
-  useSecret: false   # using IRSA, no secret required
+deployRestic: true   # enable if you want PV backups with Restic
 
+# AWS credentials management
+credentials:
+  useSecret: true
+  existingSecret: cloud-credentials-aws
+
+# IAM role for Velero service account (IRSA)
 serviceAccount:
   server:
+    create: true
     annotations:
-      eks.amazonaws.com/role-arn: ""   # injected via workflow
+      eks.amazonaws.com/role-arn: ""  # will be set by GitHub Actions workflow
+
+# Extra values to support secret templating
+aws:
+  accessKey: ""  # populated via --set in workflow
+  secretKey: ""  # populated via --set in workflow
 

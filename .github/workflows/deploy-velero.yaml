@@ -65,7 +65,7 @@ jobs:
         with:
           project_id: ${{ env.GKE_PROJECT }}
 
-      # 6b. Ensure gke-gcloud-auth-plugin available
+      # 6b. Ensure gke-gcloud-auth-plugin is available
       - name: Install gke-gcloud-auth-plugin
         run: |
           sudo apt-get update -y
