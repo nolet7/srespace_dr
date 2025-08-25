@@ -1,0 +1,92 @@
+name: Deploy Velero
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: us-east-1
+      EKS_CLUSTER: srespace-orion-eks
+      GKE_CLUSTER: srespace-orion-gke
+      GKE_PROJECT: copper-poet-468323-t7
+      GKE_ZONE: us-central1
+
+    steps:
+      # 1. Checkout code
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # 2. Run Gitleaks scan
+      - name: Run Gitleaks Secret Scan
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          args: detect --source . --no-banner --redact
+
+      # 3. Configure AWS
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.VELERO_EKS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # 4. Configure GCP
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.VELERO_GCP_KEY_JSON }}
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.GKE_PROJECT }}
+
+      # 5. Install Helm
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+
+      # 6. Deploy Velero on EKS
+      - name: Deploy Velero on EKS
+        run: |
+          aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER
+          helm upgrade --install velero vmware-tanzu/velero \
+            --namespace velero --create-namespace \
+            -f helm/values-velero-eks.yaml \
+            --set configuration.backupStorageLocation[0].name=s3-primary \
+            --set configuration.backupStorageLocation[0].provider=aws \
+            --set configuration.backupStorageLocation[0].bucket=srespace-orion-velero-prod \
+            --set configuration.backupStorageLocation[0].config.region=$AWS_REGION \
+            --set configuration.volumeSnapshotLocation[0].name=aws-default \
+            --set configuration.volumeSnapshotLocation[0].provider=aws \
+            --set serviceAccount.server.annotations."eks\.amazonaws\.com/role-arn"="${{ secrets.VELERO_EKS_ROLE_ARN }}"
+
+      # 7. Deploy Velero on GKE
+      - name: Deploy Velero on GKE
+        run: |
+          gcloud container clusters get-credentials $GKE_CLUSTER --zone $GKE_ZONE --project $GKE_PROJECT
+          echo '${{ secrets.VELERO_GCP_KEY_JSON }}' > velero-gcp-credentials.json
+          kubectl create secret generic cloud-credentials \
+            --namespace velero \
+            --from-file=cloud=velero-gcp-credentials.json \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+          helm upgrade --install velero vmware-tanzu/velero \
+            --namespace velero --create-namespace \
+            -f helm/values-velero-gke.yaml \
+            --set initContainers[0].name=velero-plugin-for-gcp \
+            --set initContainers[0].image=velero/velero-plugin-for-gcp:v1.12.2 \
+            --set initContainers[0].volumeMounts[0].mountPath=/target \
+            --set initContainers[0].volumeMounts[0].name=plugins \
+            --set configuration.backupStorageLocation[0].name=gcs-dr \
+            --set configuration.backupStorageLocation[0].provider=gcp \
+            --set configuration.backupStorageLocation[0].bucket=srespace-orion-velero-dr \
+            --set configuration.volumeSnapshotLocation[0].name=gcp-default \
+            --set configuration.volumeSnapshotLocation[0].provider=gcp \
+            --set serviceAccount.server.annotations."iam\.gke\.io/gcp-service-account"="${{ secrets.VELERO_GSA_EMAIL }}" \
+            --set credentials.existingSecret=cloud-credentials
+

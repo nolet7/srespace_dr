@@ -1,0 +1,19 @@
+configuration:
+  backupStorageLocation:
+    - name: s3-primary
+      provider: aws
+      bucket: srespace-orion-velero-prod
+      config:
+        region: us-east-1
+  volumeSnapshotLocation:
+    - name: aws-default
+      provider: aws
+
+credentials:
+  useSecret: false   # using IRSA, no secret required
+
+serviceAccount:
+  server:
+    annotations:
+      eks.amazonaws.com/role-arn: ""   # injected via workflow
+

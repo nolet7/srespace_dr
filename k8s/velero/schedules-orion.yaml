@@ -1,0 +1,32 @@
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: orion-s3-5m
+  namespace: velero
+  labels:
+    client: orion
+    env: prod
+spec:
+  schedule: "*/5 * * * *"   # every 5 minutes
+  template:
+    includedNamespaces:
+      - client-orion
+    defaultVolumesToFsBackup: true
+    ttl: 96h                 # keep backups for 4 days
+---
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: orion-gcs-5m
+  namespace: velero
+  labels:
+    client: orion
+    env: prod
+spec:
+  schedule: "*/5 * * * *"
+  template:
+    includedNamespaces:
+      - client-orion
+    defaultVolumesToFsBackup: true
+    ttl: 96h
+    storageLocation: gcs-dr

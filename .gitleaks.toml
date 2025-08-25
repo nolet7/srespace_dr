@@ -1,0 +1,41 @@
+title = "srespace_dr gitleaks config"
+
+# =========================
+# Rules (what to detect)
+# =========================
+
+[[rules]]
+description = "AWS Secret Key"
+id = "aws-secret-key"
+regex = '''(?i)aws(.{0,20})?(?-i)['\"][0-9a-zA-Z/+]{40}['\"]'''
+tags = ["aws", "key"]
+
+[[rules]]
+description = "Google Cloud Service Account Key"
+id = "gcp-service-account"
+regex = '''\"private_key_id\":\s*\"[0-9a-f]{40}\"'''
+tags = ["gcp", "key"]
+
+[[rules]]
+description = "Generic API Key"
+id = "generic-api-key"
+regex = '''(?i)(api|token|secret|key)(.{0,20})?['\"][0-9a-zA-Z_\-]{24,}['\"]'''
+tags = ["generic", "key"]
+
+# =========================
+# Allowlist (ignore patterns)
+# =========================
+[allowlist]
+description = "Allow known non-sensitive patterns"
+regexes = [
+  '''arn:aws:iam::[0-9]{12}:role/[a-zA-Z0-9_\-]+''',
+  '''velero-gsa@[a-z0-9\-]+\.iam\.gserviceaccount\.com''',
+  '''iam\.gke\.io/gcp-service-account''',
+  '''eks\.amazonaws\.com/role-arn'''
+]
+
+paths = [
+  "helm/values-velero-eks.yaml",
+  "helm/values-velero-gke.yaml",
+  "k8s/velero/schedules-orion.yaml"
+]
