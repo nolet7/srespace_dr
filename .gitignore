@@ -1,0 +1,24 @@
+# Terraform local state
+.terraform/
+*.tfstate
+*.tfstate.*
+
+# Terraform provider binaries
+terraform/**/.terraform/
+terraform/**/*.zip
+terraform/**/*.exe
+terraform/**/*.x5
+
+# Helm / Velero downloaded archives
+velero*.tar.gz
+velero-*/ 
+
+# Credentials and secrets
+*.json
+*.key
+*.pem
+
+# Editor / system files
+*.swp
+*.bak
+.DS_Store
