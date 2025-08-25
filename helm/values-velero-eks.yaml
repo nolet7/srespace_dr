@@ -5,6 +5,7 @@ configuration:
     - name: s3-primary
       provider: aws
       bucket: srespace-orion-velero-prod
+      default: true   # í±ˆ ensures this is the default BSL
       config:
         region: us-east-1
   volumeSnapshotLocation:
