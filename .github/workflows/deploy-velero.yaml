@@ -46,7 +46,7 @@ jobs:
           name: gitleaks-results
           path: gitleaks-results.sarif
 
-      # 5. Configure AWS
+      # 5. Configure AWS (needed for kubeconfig, IRSA gives Velero runtime creds)
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -83,19 +83,13 @@ jobs:
           helm repo add vmware-tanzu https://vmware-tanzu.github.io/helm-charts
           helm repo update
 
-      # 8. Deploy Velero on EKS
+      # 8. Deploy Velero on EKS (IRSA only, no static AWS secret)
       - name: Deploy Velero on EKS
         run: |
           aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER
           helm upgrade --install velero vmware-tanzu/velero \
             --namespace velero --create-namespace \
             -f helm/values-velero-eks.yaml \
-            --set configuration.backupStorageLocation[0].name=s3-primary \
-            --set configuration.backupStorageLocation[0].provider=aws \
-            --set configuration.backupStorageLocation[0].bucket=srespace-orion-velero-prod \
-            --set configuration.backupStorageLocation[0].config.region=$AWS_REGION \
-            --set configuration.volumeSnapshotLocation[0].name=aws-default \
-            --set configuration.volumeSnapshotLocation[0].provider=aws \
             --set serviceAccount.server.annotations."eks\.amazonaws\.com/role-arn"="${{ secrets.VELERO_EKS_ROLE_ARN }}"
 
       # 9. Deploy Velero on GKE

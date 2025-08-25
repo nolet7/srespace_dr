@@ -14,7 +14,7 @@ configuration:
 # Node Agent replaces Restic in newer versions
 deployNodeAgent: true
 
-# IRSA (no static secret needed, AWS creds via IAM role)
+# Using IAM role via IRSA — no secret
 credentials:
   useSecret: false
 
@@ -22,5 +22,5 @@ serviceAccount:
   server:
     create: true
     annotations:
-      eks.amazonaws.com/role-arn: ""  # will be set dynamically in workflow
+      eks.amazonaws.com/role-arn: ""   # set dynamically by workflow
 
