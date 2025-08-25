@@ -22,3 +22,6 @@ velero-*/
 *.swp
 *.bak
 .DS_Store
+
+# Credentials
+velero-gcp-credentials.json
