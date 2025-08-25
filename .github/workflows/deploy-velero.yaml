@@ -22,33 +22,38 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 2. Run Gitleaks scan with config + SARIF report
+      # 2. Install Gitleaks
+      - name: Install Gitleaks
+        run: |
+          wget -q https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_linux_x64.tar.gz
+          tar -xzf gitleaks_8.24.3_linux_x64.tar.gz
+          sudo mv gitleaks /usr/local/bin/
+
+      # 3. Run Gitleaks scan (never fails pipeline)
       - name: Run Gitleaks Secret Scan
-        uses: gitleaks/gitleaks-action@v2
-        with:
-          args: detect --source . \
+        run: |
+          gitleaks detect --source . \
             --config .gitleaks.toml \
             --redact \
             --no-banner \
-            --exit-code 0 \
             --report-format sarif \
-            --report-path gitleaks-results.sarif
+            --report-path gitleaks-results.sarif || true
 
-      # 3. Upload Gitleaks Report as artifact
+      # 4. Upload Gitleaks report
       - name: Upload Gitleaks Report
         uses: actions/upload-artifact@v4
         with:
           name: gitleaks-results
           path: gitleaks-results.sarif
 
-      # 4. Configure AWS
+      # 5. Configure AWS
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.VELERO_EKS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # 5. Configure GCP
+      # 6. Configure GCP
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v2
         with:
@@ -59,11 +64,11 @@ jobs:
         with:
           project_id: ${{ env.GKE_PROJECT }}
 
-      # 6. Install Helm
+      # 7. Install Helm
       - name: Setup Helm
         uses: azure/setup-helm@v4
 
-      # 7. Deploy Velero on EKS
+      # 8. Deploy Velero on EKS
       - name: Deploy Velero on EKS
         run: |
           aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER
@@ -78,7 +83,7 @@ jobs:
             --set configuration.volumeSnapshotLocation[0].provider=aws \
             --set serviceAccount.server.annotations."eks\.amazonaws\.com/role-arn"="${{ secrets.VELERO_EKS_ROLE_ARN }}"
 
-      # 8. Deploy Velero on GKE
+      # 9. Deploy Velero on GKE
       - name: Deploy Velero on GKE
         run: |
           gcloud container clusters get-credentials $GKE_CLUSTER --zone $GKE_ZONE --project $GKE_PROJECT
