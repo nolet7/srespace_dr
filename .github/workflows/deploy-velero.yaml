@@ -69,6 +69,12 @@ jobs:
       - name: Setup Helm
         uses: azure/setup-helm@v4
 
+      # 7b. Add Velero Helm repo
+      - name: Add Velero Helm Repo
+        run: |
+          helm repo add vmware-tanzu https://vmware-tanzu.github.io/helm-charts
+          helm repo update
+
       # 8. Deploy Velero on EKS
       - name: Deploy Velero on EKS
         run: |
