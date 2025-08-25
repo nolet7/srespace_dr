@@ -93,7 +93,7 @@ jobs:
       # 9. Deploy Velero on GKE
       - name: Deploy Velero on GKE
         run: |
-          gcloud container clusters get-credentials $GKE_CLUSTER --zone $GKE_ZONE --project $GKE_PROJECT        
+          gcloud container clusters get-credentials $GKE_CLUSTER --zone $GKE_ZONE --project $GKE_PROJECT
           echo '${{ secrets.VELERO_GCP_KEY_JSON }}' > velero-gcp-credentials.json
           kubectl create secret generic cloud-credentials \
             --namespace velero \
