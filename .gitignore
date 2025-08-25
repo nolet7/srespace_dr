@@ -25,3 +25,22 @@ velero-*/
 
 # Credentials
 velero-gcp-credentials.json
+
+# Ignore large provider binaries and archives
+terraform/**/*.x5
+terraform/**/*.zip
+terraform/**/*.exe
+.terraform/
+
+# Ignore Velero client downloads
+velero*.tar.gz
+velero-*/
+
+# AWS CLI installer
+terraform/aws/awscliv2.zip
+
+# Credentials and secrets
+*.json
+*.key
+*.pem
+velero-gcp-credentials.json
